@@ -12,3 +12,4 @@ qrcode
 requests
 passlib
 Exscript
+git+https://github.com/b3ck/pylzma.git#egg=pylzma
