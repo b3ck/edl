@@ -27,14 +27,22 @@ jobs:
           source venv/bin/activate
           pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
-          pip install pylzma
 
-      - name: Build
+      - name: Clone and patch pylzma
+        run: |
+          git clone https://github.com/fancycode/pylzma.git
+          cd pylzma
+          sed -i '' 's/NULL, /((Py_ssize_t)NULL), /' src/pylzma/pylzma_aes.c
+          sed -i '' 's/PyEval_InitThreads();//' src/pylzma/pylzma.c
+          python setup.py build
+          python setup.py install
+
+      - name: Build edl
         run: |
           source venv/bin/activate
           python setup.py build
 
-      - name: Package
+      - name: Package edl
         run: |
           source venv/bin/activate
           python setup.py sdist bdist_wheel
