@@ -12,74 +12,67 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.11'
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip setuptools wheel
-          pip install -r requirements.txt
+    - name: Install dependencies
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip setuptools wheel
+        pip install -r requirements.txt
 
-      - name: Clone and patch pylzma
-        run: |
-          git clone https://github.com/fancycode/pylzma.git
-          cd pylzma
-          sed -i '' 's/NULL, /((Py_ssize_t)NULL), /' src/pylzma/pylzma_aes.c
-          sed -i '' 's/PyEval_InitThreads();//' src/pylzma/pylzma.c
-          python setup.py build
-          python setup.py install
+    - name: Build edl
+      run: |
+        source venv/bin/activate
+        python setup.py build
 
-      - name: Build edl
-        run: |
-          source venv/bin/activate
-          python setup.py build
+    - name: Package edl
+      run: |
+        source venv/bin/activate
+        python setup.py sdist bdist_wheel
 
-      - name: Package edl
-        run: |
-          source venv/bin/activate
-          python setup.py sdist bdist_wheel
-
-      - name: Upload Release Asset
-        uses: actions/upload-artifact@v2
-        with:
-          name: edl-build
-          path: dist/*
+    - name: Upload Release Asset
+      uses: actions/upload-artifact@v2
+      with:
+        name: edl-build
+        path: dist/*
 
   release:
     needs: build
     runs-on: macos-latest
+
     steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: edl-build
-          path: ./dist
+    - name: Download build artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: edl-build
+        path: ./dist
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v1.0.0
-          release_name: Release v1.0.0
-          draft: false
-          prerelease: false
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v1.0.0
+        release_name: Release v1.0.0
+        draft: false
+        prerelease: false
 
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/*
-          asset_name: edl-macos-x86_64.zip
-          asset_content_type: application/zip
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/*
+        asset_name: edl-macos-x86_64.zip
+        asset_content_type: application/zip
